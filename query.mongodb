@@ -1,0 +1,59 @@
+// First : use database(electric_power_consumption)
+use("electric_power_consumption");
+
+// Find Peak Consumption
+db.cleaned_data.find({}, {Timestamp: 1, Global_active_power: 1, _id: 0 }).sort({Global_active_power: -1}).limit(1)
+
+// Query by Time Range
+// Query to count records by specific time range
+db.cleaned_data.countDocuments({
+  Timestamp: { $regex: "^2009-02-22" }
+})
+// Query to find records by specific time range
+db.cleaned_data.find({
+  Timestamp: { $regex: "^2009-02-22" }
+})
+
+// Query by Value greater than 7
+db.cleaned_data.find(({
+  Global_active_power: { $gt: 7 }
+}))
+//Query by value to find records greater than 7 
+db.cleaned_data.countDocuments({
+  Global_active_power: { $gt: 7 }
+})
+
+// Calculate Basic Statistics
+db.cleaned_data.aggregate([
+  {
+    $group: {
+      _id: null,
+      mean_power: { $avg: "$Global_active_power" },
+      min_power: { $min: "$Global_active_power" },
+      max_power: { $max: "$Global_active_power" }
+    }
+  }
+])
+
+// Calculate power consumption for each month of the year 2008
+db.cleaned_data.aggregate([
+  {
+    $match: {
+      Timestamp: { $regex: "^2008" } 
+    }
+  },
+  {
+    $addFields: {
+      month: { $substr: ["$Timestamp", 0, 7] } 
+    }
+  },
+  {
+    $group: {
+      _id: "$month",                          
+      total_power: { $sum: "$Global_active_power" } 
+    }
+  },
+  {
+    $sort: { _id: 1 } 
+  }
+])
